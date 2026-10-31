@@ -11,6 +11,8 @@ Each lab folder contains the `.pkt` file, so you can open it in Packet Tracer an
 | 1 | [ARP Protocol Test](#1-arp-protocol-test) | ARP requests, replies and probes | Packet Tracer, Wireshark | [`arp_protocol_test/`](arp_protocol_test/) |
 | 2 | [Static Routing](#2-static-routing) | Static routes between three routers | Packet Tracer | [`staticrouting/`](staticrouting/) |
 | 3 | [Standard ACL](#3-standard-acl) | Filtering traffic by source address | Packet Tracer | [`standartACL/`](standartACL/) |
+| 4 | [Extended ACL](#4-extended-acl) | Filtering by source, destination and protocol (FTP / ICMP) | Packet Tracer | [`extendedACL/`](extendedACL/) |
+| 5 | [Telnet ACL](#5-telnet-acl) | Restricting remote (VTY) access to the router | Packet Tracer | [`telnetACL/`](telnetACL/) |
 
 ---
 
@@ -89,6 +91,58 @@ Full write-up: [`standartACL/README.md`](standartACL/README.md)
 
 ---
 
+## 4. Extended ACL
+
+The same idea as the standard ACL lab, but now the filter looks at the protocol too. Two routers are linked over a `1.1.1.0/30` serial link: Router0 (`.1`) has the `192.168.1.0/24` LAN (PC0, PC1) and the `192.168.2.0/24` LAN (PC2), and Router1 (`.2`) has the server at `172.16.10.100`.
+
+![Extended ACL topology](extendedACL/topology.png)
+
+The goal: only PC0 (`192.168.1.10`) may use FTP on the server, the rest of `192.168.1.0/24` may not, and ping has to keep working for everyone.
+
+```
+access-list 105 permit tcp host 192.168.1.10 host 172.16.10.100 eq ftp
+access-list 105 deny tcp 192.168.1.0 0.0.0.255 host 172.16.10.100 eq ftp
+access-list 105 permit icmp any any
+```
+
+An extended ACL (100–199) checks source, destination, protocol and port, so it can block one service without cutting off the whole host. That is why it is usually placed close to the source, before unwanted traffic crosses the WAN link. The last line matters: every ACL ends with an implicit `deny any`, so without `permit icmp any any` ping would be blocked as well. Any other traffic not listed here (HTTP, for example) is still dropped by that implicit deny.
+
+Testing from PC1 (`192.168.1.20`): the FTP connection times out, but ping to the server gets all four replies.
+
+![FTP blocked, ping allowed](extendedACL/ping-ftp-test.png)
+
+`show access-lists` confirms that each rule is being hit:
+
+![show access-lists output](extendedACL/show-acl.png)
+
+Files: [`extendedACL.pkt`](extendedACL/extendedACL.pkt), [`topology.png`](extendedACL/topology.png), [`ping-ftp-test.png`](extendedACL/ping-ftp-test.png), [`show-acl.png`](extendedACL/show-acl.png)
+
+---
+
+## 5. Telnet ACL
+
+ACLs can also protect the router itself. Here PC0 (NETWORK ADMIN) and PC1 (USER) sit on the same switch behind Router0, and only the admin should be able to Telnet into the router.
+
+![Telnet ACL topology](telnetACL/topology.png)
+
+A standard ACL lists the allowed host, and `access-class` applies it to the VTY lines instead of an interface:
+
+```
+access-list 10 permit host 192.168.1.3
+access-list 10 deny any
+!
+line vty 0 4
+ access-class 10 in
+```
+
+![Telnet ACL configuration](telnetACL/acltelnetconfig.png)
+
+`access-group` filters traffic passing through an interface; `access-class` filters who can open a remote session (Telnet/SSH) to the device. Traffic from the user PC still goes through the router normally; only its Telnet attempts to the router are refused. The explicit `deny any` is not strictly needed because of the implicit deny, but it makes the intent clear.
+
+Files: [`telnetACL.pkt`](telnetACL/telnetACL.pkt), [`topology.png`](telnetACL/topology.png), [`acltelnetconfig.png`](telnetACL/acltelnetconfig.png)
+
+---
+
 ## Repository Structure
 
 ```
@@ -100,11 +154,20 @@ CCNA/
 ├── staticrouting/
 │   ├── staticrouting.pkt
 │   └── staticrouting.png
-└── standartACL/
-    ├── README.md
-    ├── standartACL.pkt
-    ├── standartACL.png
-    └── show-access-lists.png
+├── standartACL/
+│   ├── README.md
+│   ├── standartACL.pkt
+│   ├── standartACL.png
+│   └── show-access-lists.png
+├── extendedACL/
+│   ├── extendedACL.pkt
+│   ├── topology.png
+│   ├── ping-ftp-test.png
+│   └── show-acl.png
+└── telnetACL/
+    ├── telnetACL.pkt
+    ├── topology.png
+    └── acltelnetconfig.png
 ```
 
 ## How to Use
