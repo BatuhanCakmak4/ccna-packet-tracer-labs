@@ -270,7 +270,7 @@ The exact rules can be examined in the included Packet Tracer lab.
 
 ### ACL Verification
 
-![Named Standard ACL Output](namedStandartACL/showNamedACL.png)
+![Named Standard ACL Output](namedStandartACL/showNamedaCL.png)
 
 The `show access-lists` command can be used to inspect configured ACL rules and their match counters.
 
