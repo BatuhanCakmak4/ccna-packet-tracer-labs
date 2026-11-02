@@ -576,7 +576,7 @@ In this lab, I practiced using a dedicated DHCP server to provide IPv4 configura
 
 ### Network Topology
 
-![DHCP Server and Relay Topology](DHCPRelayAgent/topology.png)
+![DHCP Server and Relay Topology](DHCPwServer/topology.png)
 
 The topology contains one Cisco 1941 router, two Cisco 2960 switches, four PCs, and one dedicated DHCP server.
 
@@ -592,7 +592,7 @@ The topology contains one Cisco 1941 router, two Cisco 2960 switches, four PCs, 
 
 I enabled the DHCP service on the Packet Tracer server and configured separate address pools for each LAN.
 
-![DHCP Server Pools](DHCPRelayAgent/dhcpserverconfig.png)
+![DHCP Server Pools](DHCPwServer/dhcpserverconfig.png)
 
 The screenshot shows these pool settings:
 
@@ -616,7 +616,7 @@ interface gigabitEthernet 0/1
 exit
 ```
 
-![DHCP Relay Agent Configuration](DHCPRelayAgent/relay-AGENT.png)
+![DHCP Relay Agent Configuration](DHCPwServer/relay-AGENT.png)
 
 The helper address forwards supported client broadcasts, including DHCP requests, toward the specified server. The server can select the appropriate pool using the relay information and return DHCP configuration through the router.
 
