@@ -25,6 +25,7 @@ This repository will continue to grow as I explore new networking topics through
 | 6 | [Named Standard ACL](#6-named-standard-acl) | Named ACLs, source IP filtering | Packet Tracer | [namedStandartACL](namedStandartACL/) |
 | 7 | [Named Extended ACL](#7-named-extended-acl) | HTTP, DNS, FTP and ICMP traffic filtering | Packet Tracer | [namedExtendedACL](namedExtendedACL/) |
 | 8 | [DHCP on Router](#8-dhcp-on-router) | DHCP pools, automatic IP allocation, DHCP bindings | Packet Tracer | [DHCPonRouter](DHCPonRouter/) |
+| 9 | [DHCP Server & Relay Agent](#9-dhcp-server--relay-agent) | Server-based DHCP, multiple subnets, DHCP relay | Packet Tracer | [DHCPRelayAgent](DHCPRelayAgent/) |
 
 ---
 
@@ -567,6 +568,82 @@ show ip interface brief
 
 ---
 
+## 9. DHCP Server & Relay Agent
+
+**Topic:** DHCP Server Configuration and DHCP Relay (`ip helper-address`)
+
+In this lab, I practiced using a dedicated DHCP server to provide IPv4 configuration to clients on two separate networks. I also configured a Cisco router as a DHCP relay agent so that clients on a different subnet can contact the DHCP server.
+
+### Network Topology
+
+![DHCP Server and Relay Topology](DHCPRelayAgent/topology.png)
+
+The topology contains one Cisco 1941 router, two Cisco 2960 switches, four PCs, and one dedicated DHCP server.
+
+| Component | IPv4 Address / Network | Role |
+|---|---|---|
+| DHCP Server | 192.168.1.100 | Provides DHCP services |
+| Router0 GigabitEthernet0/0 | 192.168.1.1 | Gateway for LAN1 |
+| Router0 GigabitEthernet0/1 | 192.168.2.1 | Gateway for LAN2 and DHCP relay interface |
+| LAN1 | 192.168.1.0/24 | Network containing the DHCP server |
+| LAN2 | 192.168.2.0/24 | Remote network receiving relayed DHCP requests |
+
+### DHCP Server Configuration
+
+I enabled the DHCP service on the Packet Tracer server and configured separate address pools for each LAN.
+
+![DHCP Server Pools](DHCPRelayAgent/dhcpserverconfig.png)
+
+The screenshot shows these pool settings:
+
+| Pool | Default Gateway | Start IP Address | Subnet Mask | Maximum Users |
+|---|---|---|---|---|
+| LAN1 | 192.168.1.1 | 192.168.1.10 | 255.255.255.0 | 1 |
+| LAN2 | 192.168.2.1 | 192.168.2.10 | 255.255.255.0 | 1 |
+
+Both pools specify `8.8.8.8` as their DNS server. The screenshot also contains Packet Tracer's default `serverPool` entry. The two configured pools currently allow one DHCP client address each; their maximum-user values can be increased for more clients.
+
+### DHCP Relay Agent Configuration
+
+DHCP Discover messages are normally broadcast within the client's subnet. Routers do not forward these broadcasts to another network by default.
+
+To allow clients in `192.168.2.0/24` to reach the DHCP server at `192.168.1.100`, I configured the router interface facing LAN2 as a DHCP relay agent:
+
+```cisco
+conf t
+interface gigabitEthernet 0/1
+ ip helper-address 192.168.1.100
+exit
+```
+
+![DHCP Relay Agent Configuration](DHCPRelayAgent/relay-AGENT.png)
+
+The helper address forwards supported client broadcasts, including DHCP requests, toward the specified server. The server can select the appropriate pool using the relay information and return DHCP configuration through the router.
+
+LAN1 clients are on the same subnet as the DHCP server, so they do not require a relay agent for initial DHCP discovery.
+
+### What I Practiced
+
+- Configuring a dedicated DHCP server in Cisco Packet Tracer
+- Creating separate DHCP address pools for two subnets
+- Specifying default gateways, DNS addresses, and starting IP addresses
+- Understanding DHCP broadcasts and router broadcast boundaries
+- Configuring `ip helper-address` on the client-facing router interface
+- Understanding DHCP relay between different subnets
+- Comparing router-based DHCP with server-based DHCP
+
+### Useful Commands
+
+```cisco
+show running-config
+show ip interface gigabitEthernet 0/1
+show ip interface brief
+```
+
+**Lab Files:** [DHCP Server & Relay Agent](DHCPRelayAgent/)
+
+---
+
 ## Repository Structure
 
 ```text
@@ -608,11 +685,16 @@ CCNA/
 │   ├── showENACL.png
 │   └── topology.png
 │
-└── DHCPonRouter/
-    ├── dhcprouter.pkt
+├── DHCPonRouter/
+│   ├── dhcprouter.pkt
+│   ├── topology.png
+│   ├── bindings.png
+│   └── dhcppool.png
+│
+└── DHCPRelayAgent/
     ├── topology.png
-    ├── bindings.png
-    └── dhcppool.png
+    ├── dhcpserverconfig.png
+    └── relay-AGENT.png
 ```
 
 ---
