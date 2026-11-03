@@ -26,6 +26,7 @@ This repository will continue to grow as I explore new networking topics through
 | 7 | [Named Extended ACL](#7-named-extended-acl) | HTTP, DNS, FTP and ICMP traffic filtering | Packet Tracer | [namedExtendedACL](namedExtendedACL/) |
 | 8 | [DHCP on Router](#8-dhcp-on-router) | DHCP pools, automatic IP allocation, DHCP bindings | Packet Tracer | [DHCPonRouter](DHCPonRouter/) |
 | 9 | [DHCP Server & Relay Agent](#9-dhcp-server--relay-agent) | Server-based DHCP, multiple subnets, DHCP relay | Packet Tracer | [DHCPRelayAgent](DHCPRelayAgent/) |
+| 10 | [Enterprise Network Infrastructure Lab](#10-enterprise-network-infrastructure-lab) | Full mesh, static and floating routes, DHCP relay, DNS, HTTP, Telnet ACL | Packet Tracer | [enterprise-network-infrastructure](enterprise-network-infrastructure/) |
 
 ---
 
@@ -644,6 +645,131 @@ show ip interface brief
 
 ---
 
+## 10. Enterprise Network Infrastructure Lab
+
+**Topic:** Multi-LAN Network Infrastructure, Routing Redundancy, Centralized Network Services, and Management Access Control
+
+In this integrated CCNA lab, I combined several networking concepts I had previously practiced individually into one larger Cisco Packet Tracer topology. The network connects four LANs through four Cisco 1941 routers in a full-mesh design, with shared DHCP, DNS, and HTTP services hosted in LAN 4.
+
+### Network Topology
+
+![Enterprise Network Topology](enterprise-network-infrastructure/topology.png)
+
+### Network Overview
+
+| LAN | IPv4 Network | Default Gateway | Purpose |
+|---|---|---|---|
+| LAN 1 | `192.168.1.0/24` | `192.168.1.1` | Client and printer network |
+| LAN 2 | `192.168.2.0/24` | `192.168.2.1` | Client and printer network |
+| LAN 3 | `192.168.3.0/24` | `192.168.3.1` | Client and printer network |
+| LAN 4 | `192.168.4.0/24` | `192.168.4.1` | Server infrastructure and IT administration |
+
+The four routers are interconnected through six point-to-point `/30` serial networks:
+
+| Router Link | Subnet |
+|---|---|
+| R1 ↔ R3 | `1.1.1.0/30` |
+| R2 ↔ R4 | `2.2.2.0/30` |
+| R1 ↔ R2 | `3.3.3.0/30` |
+| R3 ↔ R4 | `4.4.4.0/30` |
+| R2 ↔ R3 | `5.5.5.0/30` |
+| R1 ↔ R4 | `6.6.6.0/30` |
+
+> The `/30` public-address examples are used for Packet Tracer practice. Private address space would be more appropriate for real internal WAN links.
+
+### Static Routing and Redundancy
+
+I configured manual routes to remote LANs and additional floating static routes with higher administrative distances to provide backup next hops. As an example, from R1 to LAN 4:
+
+```cisco
+! Primary route via R4
+ip route 192.168.4.0 255.255.255.0 6.6.6.2
+
+! Backup routes via R3 and R2
+ip route 192.168.4.0 255.255.255.0 1.1.1.2 20
+ip route 192.168.4.0 255.255.255.0 3.3.3.2 30
+```
+
+The router normally installs the route with the lowest administrative distance. Backup routes can be installed when the preferred route is no longer valid. End-to-end failover also depends on reachable next hops and correct routes on the other routers.
+
+#### Routing Table Verification
+
+![R4 Routing Table](enterprise-network-infrastructure/showIpRoute.png)
+
+The R4 routing table displays directly connected serial and LAN networks (`C`), locally assigned addresses (`L`), and manually configured routes (`S`) to the remote LANs.
+
+### Centralized DHCP Server and Relay
+
+A dedicated Packet Tracer server at **`192.168.4.100`** provides DHCP services for all four LANs. Separate scopes assign clients an IPv4 address, subnet mask, default gateway, and DNS server address.
+
+![Centralized DHCP Pools](enterprise-network-infrastructure/DHCPserver.png)
+
+Because DHCP Discover messages are broadcasts, routers serving LANs 1–3 use DHCP relay on their client-facing interfaces:
+
+```cisco
+interface GigabitEthernet0/0
+ ip helper-address 192.168.4.100
+```
+
+The server is directly connected to LAN 4, so a relay is not required on the LAN 4 interface.
+
+### DNS and HTTP Services
+
+The same server runs DNS and HTTP services. A DNS A record maps the local lab name **`company.local`** to **`192.168.4.100`**.
+
+![DNS A Record](enterprise-network-infrastructure/DNSserver.png)
+
+Clients use the DNS server configured in their DHCP scopes to resolve the name. I also enabled the Packet Tracer HTTP service and tested access to its web page using the server's IP address.
+
+### Telnet Management Access Control
+
+I practiced restricting remote router management through a named standard ACL applied to the VTY lines, rather than filtering ordinary traffic on router interfaces:
+
+```cisco
+ip access-list standard TELNET_ADMIN
+ permit host 192.168.4.99
+ deny any
+!
+line vty 0 4
+ access-class TELNET_ADMIN in
+ transport input telnet
+ login
+```
+
+The intended administrator host is **`192.168.4.99`**. The provided ACL screenshot records an *earlier* configuration that permits **`192.168.4.50`**, so the screenshot should not be treated as proof that the `.99` rule was already applied. The device configuration should be checked and updated to match the chosen administrator address.
+
+![Telnet ACL Verification](enterprise-network-infrastructure/showAccesList.png)
+
+**Security note:** Telnet sends credentials without encryption. SSH is preferable for production remote administration; Telnet is used here to practice VTY access restrictions.
+
+### What I Practiced
+
+- Designing and addressing four LANs connected through a full-mesh router topology
+- Configuring Cisco serial point-to-point interfaces with `/30` masks
+- Writing primary static routes and floating backup routes
+- Understanding next-hop addresses and administrative distance
+- Verifying route selection with `show ip route`
+- Configuring centralized DHCP scopes and DHCP relay using `ip helper-address`
+- Running DNS and HTTP services on a Packet Tracer server
+- Testing name resolution and HTTP connectivity across routed networks
+- Creating named standard ACLs for Telnet management access
+- Applying ACLs to VTY lines using `access-class`
+- Troubleshooting end-to-end network connectivity and service configuration
+
+### Useful Verification Commands
+
+```cisco
+show ip route
+show ip interface brief
+show running-config
+show access-lists
+show running-config | section line vty
+```
+
+**Lab Files:** [Enterprise Network Infrastructure Lab](enterprise-network-infrastructure/)
+
+---
+
 ## Repository Structure
 
 ```text
@@ -691,10 +817,18 @@ CCNA/
 │   ├── bindings.png
 │   └── dhcppool.png
 │
-└── DHCPRelayAgent/
+├── DHCPRelayAgent/
+│   ├── topology.png
+│   ├── dhcpserverconfig.png
+│   └── relay-AGENT.png
+│
+└── enterprise-network-infrastructure/
+    ├── practicelab.pkt
     ├── topology.png
-    ├── dhcpserverconfig.png
-    └── relay-AGENT.png
+    ├── DHCPserver.png
+    ├── DNSserver.png
+    ├── showIpRoute.png
+    └── showAccesList.png
 ```
 
 ---
