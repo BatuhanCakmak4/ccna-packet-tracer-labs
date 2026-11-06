@@ -781,7 +781,7 @@ In this lab, I practiced configuring static NAT on a Cisco 1941 router in Cisco 
 
 ### Network Topology
 
-![Static NAT Network Topology](staticNAT/topology%283%29.png)
+![Static NAT Network Topology](staticNAT/topology.png)
 
 The topology consists of two PCs connected through a Cisco 2960 switch, an inside Cisco 1941 router (R1), a second router, and a remote server.
 
@@ -879,7 +879,7 @@ In this Cisco Packet Tracer lab, I practiced translating private IPv4 addresses 
 
 ### Network Topology
 
-![Dynamic NAT Network Topology](dynamicNAT/topology%284%29.png)
+![Dynamic NAT Network Topology](dynamicNAT/topology.png)
 
 The topology includes two inside PCs, a Cisco 2960 switch, a Cisco 2911 NAT router, a second Cisco 2911 router, and a remote server.
 
@@ -894,7 +894,7 @@ The topology includes two inside PCs, a Cisco 2960 switch, a Cisco 2911 NAT rout
 
 ### Inside and Outside Configuration
 
-![Inside and Outside NAT Interfaces](dynamicNAT/insideoutside%281%29.png)
+![Inside and Outside NAT Interfaces](dynamicNAT/insideoutside.png)
 
 ```cisco
 interface gigabitEthernet 0/0
