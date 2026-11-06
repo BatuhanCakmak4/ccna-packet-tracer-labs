@@ -30,6 +30,7 @@ This repository will continue to grow as I explore new networking topics through
 | 11 | [Static NAT Lab](#11-static-nat-lab) | Inside/outside interfaces, static NAT mapping, ICMP verification, NAT translation table | Packet Tracer | [staticNAT](staticNAT/) |
 | 12 | [Dynamic NAT Lab](#12-dynamic-nat-lab) | NAT pools, standard ACL, inside/outside interfaces, dynamic translation verification | Packet Tracer | [dynamicNAT](dynamicNAT/) |
 | 13 | [PAT (NAT Overload) Lab](#13-pat-nat-overload-lab) | Port Address Translation, interface overload, ACL, ICMP translation verification | Packet Tracer | [PAT](PAT/) |
+| 14 | [Trunk Mode Lab](#14-trunk-mode-lab) | VLAN 10/20, 802.1Q trunking, access ports, inter-switch connectivity | Packet Tracer | [TrunkMode](TrunkMode/) |
 
 ---
 
@@ -1073,6 +1074,101 @@ show running-config
 
 ---
 
+## 14. Trunk Mode Lab
+
+**Topic:** VLAN Segmentation, Access Ports, and IEEE 802.1Q Trunking
+
+In this Cisco Packet Tracer lab, I connected two Cisco 2960 switches and configured an **802.1Q trunk link** to carry traffic from two VLANs over a single physical connection. The objective was to verify communication between devices in the same VLAN on different switches while observing that traffic between separate VLANs requires Layer 3 routing.
+
+### Network Topology
+
+![Trunk Mode Network Topology](TrunkMode/topology.png)
+
+The switches are connected through their **GigabitEthernet0/1** interfaces. Each switch has an HR host in VLAN 10 and a SALES host in VLAN 20.
+
+| VLAN | Name | Subnet | Left PC | Right PC |
+|---|---|---|---|---|
+| 10 | HR | `192.168.1.0/24` | `192.168.1.10` | `192.168.1.20` |
+| 20 | SALES | `192.168.2.0/24` | `192.168.2.10` | `192.168.2.20` |
+
+### Access Port Configuration
+
+I configured the PC-facing ports as access ports and assigned each port to its corresponding VLAN.
+
+![Access Port VLAN Configuration](TrunkMode/switchportModeAccessVlan.png)
+
+```cisco
+interface fastEthernet 0/1
+ switchport mode access
+ switchport access vlan 10
+exit
+
+interface fastEthernet 0/2
+ switchport mode access
+ switchport access vlan 20
+exit
+```
+
+Access ports carry traffic for one assigned VLAN. The same VLAN assignments are needed for the relevant PC-facing ports on both switches.
+
+### Trunk Configuration
+
+I configured the inter-switch link on `Gi0/1` to carry VLAN 10 and VLAN 20 on both switches.
+
+![Trunk Configuration](TrunkMode/trunkCONF.png)
+
+```cisco
+interface gigabitEthernet 0/1
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+exit
+```
+
+The trunk uses **IEEE 802.1Q tagging** to identify the VLAN associated with traffic crossing the link. Native VLAN traffic is untagged by default.
+
+### Trunk Verification
+
+I used `show interfaces trunk` to verify the operational status and allowed VLANs.
+
+![Show Interfaces Trunk Output](TrunkMode/showInterfaceTrunk.png)
+
+The output confirms that `Gi0/1` is **trunking**, the encapsulation is **802.1Q**, and VLANs **10 and 20** are allowed, active, and in the STP forwarding state.
+
+### Ping and VLAN Isolation Testing
+
+I tested communication from `192.168.1.10` to two different destinations.
+
+![Ping Test: Same VLAN vs Different VLAN](TrunkMode/pingFrom192.168.1.10.png)
+
+The ping from **`192.168.1.10` to `192.168.1.20` succeeds** (4 replies, 0% loss), demonstrating communication between two hosts in VLAN 10 across the trunk link. The ping from **`192.168.1.10` to `192.168.2.20` times out** (4 lost packets), consistent with the absence of inter-VLAN routing in this topology.
+
+> **Key takeaway:** Trunk mode carries traffic from multiple VLANs over one physical link. It allows devices in the **same VLAN**, even on different switches, to communicate when their IP settings are correct. **A trunk does not enable communication between different VLANs**; a router or Layer 3 switch providing **inter-VLAN routing** is required.
+
+An access-mode inter-switch link can also carry one VLAN when both ends are assigned to that VLAN; trunk mode is used here because the link needs to transport **both VLAN 10 and VLAN 20**.
+
+### What I Practiced
+
+- Creating and assigning VLAN 10 (HR) and VLAN 20 (SALES)
+- Configuring access ports for end devices
+- Configuring an 802.1Q trunk between two switches
+- Restricting allowed VLANs on a trunk
+- Verifying trunk status and STP forwarding states
+- Testing same-VLAN communication across switches
+- Understanding VLAN isolation and the need for inter-VLAN routing
+
+### Useful Commands
+
+```cisco
+show vlan brief
+show interfaces trunk
+show interfaces fastEthernet 0/1 switchport
+show spanning-tree vlan 10
+```
+
+**Lab Files:** [Trunk Mode Lab](TrunkMode/) — [Packet Tracer project](TrunkMode/trunkMode.pkt)
+
+---
+
 ## Repository Structure
 
 ```text
@@ -1151,7 +1247,15 @@ CCNA/
     ├── topology.png
     ├── insideout.png
     ├── patCONF.png
-    └── showIPnatTrans.png
+    ├── showIPnatTrans.png
+│
+└── TrunkMode/
+    ├── trunkMode.pkt
+    ├── topology.png
+    ├── trunkCONF.png
+    ├── switchportModeAccessVlan.png
+    ├── showInterfaceTrunk.png
+    └── pingFrom192.168.1.10.png
 ```
 
 ---
